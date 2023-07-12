@@ -6,11 +6,16 @@ const CHAR g_sz_LOGIN_INVATE[] = "Введите имя пользователя
 const CHAR g_sz_PASSWORD_INVATE[] = "Введите пароль";
 
 BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+//-----------------------------------------------------------------------------------------------------------------------
+//HWND - handler to window(лбработчик окна). для того чтобы обратиться к окну можно только через его обработчик (handler).
+//uint uMsg - сообщения отправляемые в окно.
+// WPARAM, LPARAM -- параметры сообщения зависят от самого сообщения.
+//-----------------------------------------------------------------------------------------------------------------------
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
 	//MessageBox(NULL, "Привет Мир! Я окно сообщения :-)", "Info", MB_YESNOCANCEL | MB_ICONINFORMATION);
+	//hInstance - запущенной программы всегда можно получить при помощи команды GetModuleHandle(NULL);
 
 	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), 0, DlgProc, 0);
 
