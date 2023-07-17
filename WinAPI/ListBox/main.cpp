@@ -50,18 +50,12 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             HWND hEditControl = GetDlgItem(hwnd, IDC_EDIT1);
             SendMessage(hEditControl, WM_GETTEXT, SIZE, (LPARAM)sz_buffer);
             int count = SendMessage(hList, LB_GETCOUNT, 0, 0);
-            bool isEmpty = false;
+
             if (sz_buffer == NULL) {
                 MessageBox(hwnd, "Строка пустая!", "Info", MB_OK | MB_ICONINFORMATION);
             }
             else {
-                for (int i = 0; i < count; i++) {
-                    SendMessage(hList, LB_GETTEXT, i, (LPARAM)sz_buf);
-                    if (strcmp(sz_buf, sz_buffer) == 0) {
-                        isEmpty = true;
-                    }
-                }
-                if (isEmpty) {
+                if (SendMessage(hList, LB_FINDSTRING, 0, (LPARAM)sz_buffer) != LB_ERR) {
                     MessageBox(hwnd, "Данное слово уже есть в списке", "Info", MB_OK | MB_ICONINFORMATION);
                 }
                 else {
