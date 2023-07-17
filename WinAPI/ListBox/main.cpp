@@ -51,27 +51,33 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             SendMessage(hEditControl, WM_GETTEXT, SIZE, (LPARAM)sz_buffer);
             int count = SendMessage(hList, LB_GETCOUNT, 0, 0);
             bool isEmpty = false;
-            for (int i = 0; i < count; i++) {
-                SendMessage(hList, LB_GETTEXT, i, (LPARAM)sz_buf);
-                if (strcmp(sz_buf, sz_buffer) == 0) {
-                    isEmpty = true;
-                }
-            }
-            if (isEmpty) {
-                MessageBox(hwnd, "Данное слово уже есть в списке", "Info", MB_OK | MB_ICONINFORMATION);
+            if (sz_buffer == NULL) {
+                MessageBox(hwnd, "Строка пустая!", "Info", MB_OK | MB_ICONINFORMATION);
             }
             else {
-                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sz_buffer);
-                listen.push_back(sz_buffer);
+                for (int i = 0; i < count; i++) {
+                    SendMessage(hList, LB_GETTEXT, i, (LPARAM)sz_buf);
+                    if (strcmp(sz_buf, sz_buffer) == 0) {
+                        isEmpty = true;
+                    }
+                }
+                if (isEmpty) {
+                    MessageBox(hwnd, "Данное слово уже есть в списке", "Info", MB_OK | MB_ICONINFORMATION);
+                }
+                else {
+                    SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)sz_buffer);
+                    listen.push_back(sz_buffer);
+                }
             }
         }break;
         case IDC_CHECK1: {
             INT value = SendMessage(GetDlgItem(hwnd, IDC_CHECK1), BM_GETCHECK, 0, 0);
+            DestroyWindow(GetDlgItem(hwnd, IDC_LIST1));
             if (value == 0) {
-                hList = CreateWindow("listbox", NULL, WS_CHILD | WS_VISIBLE ,
+                hList = CreateWindow("listbox", NULL, WS_CHILD | WS_VISIBLE,
                     7, 11, 442, 200, hwnd, (HMENU)IDC_LIST1, NULL, NULL);
                 SendMessage(hList, WM_SETREDRAW, FALSE, 0L);
-                for (int i=0;i!=listen.size();i++)
+                for (int i = 0; i != listen.size(); i++)
                 {
                     SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)(LPSTR)listen[i].c_str());
                 }
