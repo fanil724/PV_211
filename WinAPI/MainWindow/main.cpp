@@ -6,7 +6,7 @@
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "MeFirstWindow";
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void print(HWND hwnd, RECT rect);
+void SetSize(HWND hwnd, RECT rect);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow) {
 
@@ -77,16 +77,17 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         INT X = GetSystemMetrics(0) / 10;
         INT Y = GetSystemMetrics(1) / 10;
         SetWindowPos(hwnd, 0, X, Y, ((GetSystemMetrics(0) - X) / 4 * 3), ((GetSystemMetrics(1) - Y) / 4 * 3), 0); ;
-        GetSystemMetrics(6);
         RECT rect;
         GetWindowRect(hwnd, &rect);
-        print(hwnd, rect);
+        SetSize(hwnd, rect);
     }
                   break;
-    case WM_COMMAND: {
-
-    }
-                   break;
+    case WM_COMMAND: {} break;
+    case WM_EXITSIZEMOVE: {
+        RECT rect;
+        GetWindowRect(hwnd, &rect);
+        SetSize(hwnd, rect);
+    }                        break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_CLOSE:
         if (MessageBox(hwnd, "Вы действительно хотите закрыть окно?", "Question", MB_YESNO | MB_ICONQUESTION) == IDYES) {
@@ -100,7 +101,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 
-void print(HWND hwnd, RECT rect) {
+void SetSize(HWND hwnd, RECT rect) {
     CONST INT SIZE = 256;
     INT horizontal = rect.left;
     INT vertical = rect.top;
@@ -109,8 +110,7 @@ void print(HWND hwnd, RECT rect) {
     CHAR sz_message[SIZE]{ " " };
     CHAR nameWindow[SIZE]{};
     GetWindowText(hwnd, nameWindow, SIZE);
-    sprintf(sz_message, " %d (позиция %d* %d, размеры %d* %d)",
-        nameWindow, horizontal, vertical, height, width);
+    sprintf(sz_message, " MeFirstWindow (позиция %d* %d, размеры %d* %d)",
+        horizontal, vertical, height, width);
     SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)sz_message);
-
 }
