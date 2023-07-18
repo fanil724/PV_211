@@ -24,6 +24,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg)
     {
     case WM_INITDIALOG: {
+        // SendMessage(GetDlgItem(hwnd, IDC_EDIT1), WM_SETFOCUS, (WPARAM)GetDlgItem(hwnd, IDOK), 0);
         HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
         SendMessage(hwnd, WM_SETICON, 0, (LPARAM)hIcon);
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON1), WM_SETTEXT, 0, (LPARAM)"Добавить запись");
@@ -49,9 +50,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             CHAR sz_buf[SIZE]{};
             HWND hEditControl = GetDlgItem(hwnd, IDC_EDIT1);
             SendMessage(hEditControl, WM_GETTEXT, SIZE, (LPARAM)sz_buffer);
-            int count = SendMessage(hList, LB_GETCOUNT, 0, 0);
-
-            if (sz_buffer == NULL) {
+            if (strcmp(sz_buffer, "") == 0) {
                 MessageBox(hwnd, "Строка пустая!", "Info", MB_OK | MB_ICONINFORMATION);
             }
             else {
@@ -70,25 +69,19 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             if (value == 0) {
                 hList = CreateWindow("listbox", NULL, WS_CHILD | WS_VISIBLE,
                     7, 11, 442, 200, hwnd, (HMENU)IDC_LIST1, NULL, NULL);
-                SendMessage(hList, WM_SETREDRAW, FALSE, 0L);
                 for (int i = 0; i != listen.size(); i++)
                 {
                     SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)(LPSTR)listen[i].c_str());
                 }
-
-                SendMessage(hList, WM_SETREDRAW, TRUE, 0L);
-                InvalidateRect(hList, NULL, TRUE);
             }
             else {
                 hList = CreateWindow("listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_SORT,
                     7, 11, 442, 200, hwnd, (HMENU)IDC_LIST1, NULL, NULL);
-                SendMessage(hList, WM_SETREDRAW, FALSE, 0L);
                 for (auto i : listen)
                 {
                     SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)(LPSTR)i.c_str());
                 }
-                SendMessage(hList, WM_SETREDRAW, TRUE, 0L);
-                InvalidateRect(hList, NULL, TRUE);
+
             }
         }break;
         case IDCANCEL: {EndDialog(hwnd, 0); } break;

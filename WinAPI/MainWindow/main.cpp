@@ -1,8 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
+#include"resource.h"
+#include<stdio.h>
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "MeFirstWindow";
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void print(HWND hwnd, RECT rect);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow) {
 
@@ -14,9 +18,12 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     wc.cbWndExtra = 0;  //window Extra bytes дополнительные байты окна
     wc.style = 0;
 
-    wc.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
-    wc.hIconSm = LoadIcon(hInstance, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(hInstance, IDC_ARROW);
+    // wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_STAR));//отображается в панели задач
+    // wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_PALM));//отоброажается в заголовке окна
+    wc.hIcon = (HICON)LoadImage(hInstance, "Palm.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
+    wc.hIconSm = (HICON)LoadImage(hInstance, "Star.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
+    //wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
+    wc.hCursor = (HCURSOR)LoadImage(hInstance, "Protoss.cur", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 
     wc.hInstance = hInstance;
@@ -48,11 +55,14 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         MessageBox(NULL, "Окно не было созданно", "Error", MB_OK | MB_ICONERROR);
         return 0;
     }
+
+    ShowWindow(hwnd, nCmdShow);//задает режим отображения окна
+    UpdateWindow(hwnd);//выполняет прорисовку окна
     //3. Запуск цикла сообщений
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) > 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    while (GetMessage(&msg, 0, 0, 0) > 0) {
+        TranslateMessage(&msg);//транслирует сообщения виртуальных клавиш в символьные сообщения
+        DispatchMessage(&msg);//отправляет сообщения в процедуре окна. Сообщения берет от GETMessage();
     }
 
     return msg.wParam;
@@ -60,15 +70,47 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
     switch (uMsg)
     {
-    case WM_CREATE: {}
+    case WM_CREATE: {
+        INT X = GetSystemMetrics(0) / 10;
+        INT Y = GetSystemMetrics(1) / 10;
+        SetWindowPos(hwnd, 0, X, Y, ((GetSystemMetrics(0) - X) / 4 * 3), ((GetSystemMetrics(1) - Y) / 4 * 3), 0); ;
+        GetSystemMetrics(6);
+        RECT rect;
+        GetWindowRect(hwnd, &rect);
+        print(hwnd, rect);
+    }
                   break;
-    case WM_COMMAND: {}
+    case WM_COMMAND: {
+
+    }
                    break;
     case WM_DESTROY: PostQuitMessage(0); break;
-    case WM_CLOSE: DestroyWindow(hwnd); break;
+    case WM_CLOSE:
+        if (MessageBox(hwnd, "Вы действительно хотите закрыть окно?", "Question", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+            DestroyWindow(hwnd);//функция уничтожает окно
+        }
+        //конкретно здесь функция посылает сообщение WM_DESTROY
+        break;
     default: return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+
+
+void print(HWND hwnd, RECT rect) {
+    CONST INT SIZE = 256;
+    INT horizontal = rect.left;
+    INT vertical = rect.top;
+    INT width = rect.bottom - rect.top;
+    INT height = rect.right - rect.left;
+    CHAR sz_message[SIZE]{ " " };
+    CHAR nameWindow[SIZE]{};
+    GetWindowText(hwnd, nameWindow, SIZE);
+    sprintf(sz_message, " %d (позиция %d* %d, размеры %d* %d)",
+        nameWindow, horizontal, vertical, height, width);
+    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)sz_message);
+
 }
