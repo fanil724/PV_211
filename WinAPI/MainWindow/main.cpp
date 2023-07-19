@@ -3,7 +3,7 @@
 #include"resource.h"
 #include<stdio.h>
 
-CONST CHAR g_sz_MY_WINDOW_CLASS[] = "MeFirstWindow";
+CONST CHAR g_sz_MY_WINDOW_CLASS[] = "MyFirstWindow";
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetSize(HWND hwnd, RECT rect);
@@ -74,16 +74,17 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg)
     {
     case WM_CREATE: {
-        INT X = GetSystemMetrics(0) / 10;
-        INT Y = GetSystemMetrics(1) / 10;
-        SetWindowPos(hwnd, 0, X, Y, ((GetSystemMetrics(0) - X) / 4 * 3), ((GetSystemMetrics(1) - Y) / 4 * 3), 0); ;
+        INT X = GetSystemMetrics(0) / 8;
+        INT Y = GetSystemMetrics(1) / 8;
+        SetWindowPos(hwnd, 0, X, Y, (GetSystemMetrics(0) / 4 * 3), (GetSystemMetrics(1) / 4 * 3), 0); ;//установка размера окна
         RECT rect;
         GetWindowRect(hwnd, &rect);
         SetSize(hwnd, rect);
     }
                   break;
     case WM_COMMAND: {} break;
-    case WM_EXITSIZEMOVE: {
+    case WM_SIZE:
+    case WM_MOVE: {
         RECT rect;
         GetWindowRect(hwnd, &rect);
         SetSize(hwnd, rect);
@@ -107,10 +108,8 @@ void SetSize(HWND hwnd, RECT rect) {
     INT vertical = rect.top;
     INT width = rect.bottom - rect.top;
     INT height = rect.right - rect.left;
-    CHAR sz_message[SIZE]{ " " };
-    CHAR nameWindow[SIZE]{};
-    GetWindowText(hwnd, nameWindow, SIZE);
-    sprintf(sz_message, " MeFirstWindow (позиция %d* %d, размеры %d* %d)",
+    CHAR sz_message[SIZE]{};
+    sprintf(sz_message, "%s (позиция %d* %d, размеры %d* %d)", g_sz_MY_WINDOW_CLASS,
         horizontal, vertical, height, width);
     SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)sz_message);
 }
