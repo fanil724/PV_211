@@ -5,6 +5,14 @@
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "MyFirstWindow";
 
+CONST INT g_i_BTN_SIZE = 50;     //g global, i int
+CONST INT g_i_DISTANCE = 10;     //растояние между кнопками
+CONST INT g_i_START_X = 10;      //отступ от начала окна
+CONST INT g_i_START_Y = 10;      //отступ от начала окна
+CONST INT g_i_DISPLAY_WIDHT = (g_i_BTN_SIZE + g_i_DISTANCE) * 5;
+CONST INT g_i_DISPLAY_HEIGHT = 18;
+
+
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetSize(HWND hwnd, RECT rect);
 
@@ -80,6 +88,40 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         RECT rect;
         GetWindowRect(hwnd, &rect);
         SetSize(hwnd, rect);
+
+        HWND hEdit = CreateWindowEx
+        (
+            NULL,
+            "Edit",
+            "0",
+            WS_CHILD | WS_VISIBLE | ES_RIGHT | WS_BORDER,
+            X, Y,
+            g_i_DISPLAY_WIDHT, g_i_DISPLAY_HEIGHT,
+            hwnd,
+            (HMENU)IDC_EDIT,
+            GetModuleHandle(NULL),
+            NULL
+        );
+        CHAR sz_btn_name[] = "0";
+        INT number = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                sz_btn_name[0] = number + 49;
+                CreateWindowEx(
+                    NULL,
+                    "Button",
+                    sz_btn_name,
+                    WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                    X + g_i_DISTANCE + (g_i_BTN_SIZE + g_i_DISTANCE) * j, Y + g_i_DISTANCE + (g_i_BTN_SIZE + g_i_DISTANCE) * (2 - i) + g_i_DISPLAY_HEIGHT,
+                    g_i_BTN_SIZE, g_i_BTN_SIZE,
+                    hwnd,
+                    (HMENU)(1000 + number),
+                    GetModuleHandle(NULL),
+                    NULL
+                );
+                number++;
+            }
+        }
     }
                   break;
     case WM_COMMAND: {} break;
