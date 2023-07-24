@@ -95,7 +95,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL,
             "Edit",
             "0",
-            WS_CHILD | WS_VISIBLE | ES_RIGHT | WS_BORDER,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | ES_READONLY,
             g_i_START_X, g_i_START_Y,
             g_i_DISPLAY_WIDHT, g_i_DISPLAY_HEIGHT,
             hwnd,
@@ -223,7 +223,19 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_EQUAL), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Equal.ico", IMAGE_ICON,
                 g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
+
+        // SendMessage(GetDlgItem(hwnd, IDC_EDIT), WM_SETFONT, 54, true);
     }       break;
+
+
+    case WM_CTLCOLOREDIT:
+        if ((HWND)lParam == GetDlgItem(hwnd, IDC_EDIT))
+        {
+            SetBkColor((HDC)wParam, RGB(0, 0, 255));
+            SetTextColor((HDC)wParam, 0x00FFFF);
+            return (INT_PTR)GetStockObject(NULL_BRUSH);
+        }
+        break;
     case WM_COMMAND: {
         CONST INT SIZE = 256;
         CHAR SZ_buffer[SIZE] = {};
@@ -233,7 +245,9 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         static DOUBLE b = 0;
         static bool stored = false;
         static bool input = false;
+        static bool operation_changed = false;
         static char operation = '0';
+        static char old_operation = 0;
         if (LOWORD(wParam) >= IDC_BUTTON_0 && LOWORD(wParam) <= IDC_BUTTON_9) {
             input = true;
             if (stored && operation != '0') {
@@ -270,7 +284,9 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
             stored = true;
             input = false;
-            SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0);
+            if (old_operation == operation && operation_changed) {
+                SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0);
+            }
             switch (LOWORD(wParam))
             {
             case IDC_BUTTON_PLUS:operation = '+'; break;
@@ -278,8 +294,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case IDC_BUTTON_SLASH:operation = '/'; break;
             case IDC_BUTTON_ASTER:operation = '*'; break;
             }
+            operation_changed = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
+
             if (input) {
                 SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
                 b = strtod(SZ_buffer, NULL);
@@ -292,10 +310,27 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case '*': a *= b; break;
             case '/': a /= b; break;
             }
+            old_operation = operation;
+            operation_changed = false;
             sprintf(SZ_buffer, "%g", a);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
         }
     } break;
+    case WM_KEYDOWN: {
+        switch (wParam)
+        {
+        case VK_OEM_PLUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_PLUS, 0); break;
+        case VK_OEM_MINUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
+        case VK_MULTIPLY:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0); break;
+        case VK_DIVIDE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
+        case VK_RETURN:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0); break;
+        }
+        if (wParam == VK_OEM_PERIOD)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
+
+        if (wParam >= 0x30 && wParam <= 0x39) {
+            SendMessage(hwnd, WM_COMMAND, wParam - 0x30 + 1000, 0);
+        }
+    }break;
     case WM_SIZE:
     case WM_MOVE: {
         RECT rect;
