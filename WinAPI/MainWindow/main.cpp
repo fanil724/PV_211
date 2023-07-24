@@ -4,14 +4,12 @@
 #include<stdio.h>
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "Сalculator";
-
 CONST INT g_i_BTN_SIZE = 50;     //g global, i int
 CONST INT g_i_DISTANCE = 10;     //растояние между кнопками
 CONST INT g_i_START_X = 10;      //отступ от начала окна
 CONST INT g_i_START_Y = 10;      //отступ от начала окна
 CONST INT g_i_DISPLAY_WIDHT = (g_i_BTN_SIZE + g_i_DISTANCE) * 5 - g_i_DISTANCE;
 CONST INT g_i_DISPLAY_HEIGHT = 18;
-
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetSize(HWND hwnd, RECT rect);
@@ -30,9 +28,9 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     // wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_PALM));//отоброажается в заголовке окна
     wc.hIcon = (HICON)LoadImage(hInstance, "Icon/Cal.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
     wc.hIconSm = (HICON)LoadImage(hInstance, "Icon/Cal.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
-    //wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
-    wc.hCursor = (HCURSOR)LoadImage(hInstance, "Protoss.cur", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
+    // wc.hCursor = (HCURSOR)LoadImage(hInstance, "Protoss.cur", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
+    wc.hbrBackground = (HBRUSH)COLOR_ACTIVEBORDER;
 
     wc.hInstance = hInstance;
     wc.lpfnWndProc = (WNDPROC)WndProc; //TODO: указать процедуру окна
@@ -167,7 +165,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_i_BTN_SIZE, g_i_BTN_SIZE * 2 + g_i_DISTANCE,
             hwnd, (HMENU)IDC_BUTTON_CLAER, GetModuleHandle(NULL), NULL
         );
-        CreateWindowEx(NULL, "BUTTON",  "=",
+        CreateWindowEx(NULL, "BUTTON", "=",
             WS_CHILD | WS_VISIBLE | BS_ICON | BS_PUSHBUTTON,
             g_i_START_X + (g_i_BTN_SIZE + g_i_DISTANCE) * 4, g_i_DISTANCE + g_i_START_Y + (g_i_BTN_SIZE + g_i_DISTANCE) * 2 + g_i_DISPLAY_HEIGHT,
             g_i_BTN_SIZE, g_i_BTN_SIZE * 2 + g_i_DISTANCE,
@@ -206,7 +204,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_POINT), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Point.ico", IMAGE_ICON,
-                g_i_BTN_SIZE , LR_DEFAULTSIZE, LR_LOADFROMFILE));
+                g_i_BTN_SIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_MINUS), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Minus.ico", IMAGE_ICON,
                 g_i_BTN_SIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
@@ -221,7 +219,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 g_i_BTN_SIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_CLAER), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/C.ico", IMAGE_ICON,
-                g_i_BTN_SIZE+g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
+                g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_EQUAL), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Equal.ico", IMAGE_ICON,
                 g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
@@ -232,16 +230,20 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
         CHAR sz_digit[2] = {};
         static DOUBLE a = 0;
-        double b = 0;
+        static DOUBLE b = 0;
         static bool stored = false;
-        static char operation = 0;
+        static char operation = '0';
         if (LOWORD(wParam) >= IDC_BUTTON_0 && LOWORD(wParam) <= IDC_BUTTON_9) {
-            if (stored && operation != '0') { SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)""); }
+            if (stored && operation != '0') {
+                SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"");
+            }
             stored = false;
             SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
-            while (SZ_buffer[0] == '0') {
-                for (int i = 0; i < SZ_buffer[i]; i++) {
-                    SZ_buffer[i] = SZ_buffer[i + 1];
+            if (SZ_buffer[1] != '.') {
+                while (SZ_buffer[0] == '0') {
+                    for (int i = 0; i < SZ_buffer[i]; i++) {
+                        SZ_buffer[i] = SZ_buffer[i + 1];
+                    }
                 }
             }
             sz_digit[0] = LOWORD(wParam) - 1000 + '0';
@@ -254,7 +256,6 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             sz_digit[0] = '.';
             strcat(SZ_buffer, sz_digit);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
-
         }
         if (LOWORD(wParam) == IDC_BUTTON_CLAER) {
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"0");
@@ -284,6 +285,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case '*': a *= b; break;
             case '/': a /= b; break;
             }
+            stored = false;
             sprintf(SZ_buffer, "%g", a);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
         }
