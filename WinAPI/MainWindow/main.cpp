@@ -28,7 +28,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     // wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_PALM));//отоброажается в заголовке окна
     wc.hIcon = (HICON)LoadImage(hInstance, "Icon/Cal.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
     wc.hIconSm = (HICON)LoadImage(hInstance, "Icon/Cal.ico", IMAGE_ICON, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
-    wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
+    wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_ARROW));
     // wc.hCursor = (HCURSOR)LoadImage(hInstance, "Protoss.cur", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
     wc.hbrBackground = (HBRUSH)COLOR_ACTIVEBORDER;
 
@@ -262,11 +262,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             a = 0; stored = false;
         }
         if (LOWORD(wParam) >= IDC_BUTTON_PLUS && LOWORD(wParam) <= IDC_BUTTON_SLASH) {
-            SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
-            b = strtod(SZ_buffer, NULL);
             if (a == 0) {
-                a = b;
-                break;
+                SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
+                a = strtod(SZ_buffer, NULL);
+               
             }
             switch (LOWORD(wParam))
             {
@@ -278,6 +277,8 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             stored = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
+            SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
+            b = strtod(SZ_buffer, NULL);
             switch (operation)
             {
             case '+': a += b; break;
@@ -285,6 +286,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case '*': a *= b; break;
             case '/': a /= b; break;
             }
+            operation = '0';
             stored = false;
             sprintf(SZ_buffer, "%g", a);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
