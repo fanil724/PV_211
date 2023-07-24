@@ -9,7 +9,7 @@ CONST INT g_i_DISTANCE = 10;     //растояние между кнопками
 CONST INT g_i_START_X = 10;      //отступ от начала окна
 CONST INT g_i_START_Y = 10;      //отступ от начала окна
 CONST INT g_i_DISPLAY_WIDHT = (g_i_BTN_SIZE + g_i_DISTANCE) * 5 - g_i_DISTANCE;
-CONST INT g_i_DISPLAY_HEIGHT = 18;
+CONST INT g_i_DISPLAY_HEIGHT = 45;
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetSize(HWND hwnd, RECT rect);
@@ -232,8 +232,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         static DOUBLE a = 0;
         static DOUBLE b = 0;
         static bool stored = false;
+        static bool input = false;
         static char operation = '0';
         if (LOWORD(wParam) >= IDC_BUTTON_0 && LOWORD(wParam) <= IDC_BUTTON_9) {
+            input = true;
             if (stored && operation != '0') {
                 SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"");
             }
@@ -265,8 +267,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             if (a == 0) {
                 SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
                 a = strtod(SZ_buffer, NULL);
-               
             }
+            stored = true;
+            input = false;
+            SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0);
             switch (LOWORD(wParam))
             {
             case IDC_BUTTON_PLUS:operation = '+'; break;
@@ -274,11 +278,13 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case IDC_BUTTON_SLASH:operation = '/'; break;
             case IDC_BUTTON_ASTER:operation = '*'; break;
             }
-            stored = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
-            SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
-            b = strtod(SZ_buffer, NULL);
+            if (input) {
+                SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
+                b = strtod(SZ_buffer, NULL);
+            }
+            input = false;
             switch (operation)
             {
             case '+': a += b; break;
@@ -286,8 +292,6 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case '*': a *= b; break;
             case '/': a /= b; break;
             }
-            operation = '0';
-            stored = false;
             sprintf(SZ_buffer, "%g", a);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
         }
