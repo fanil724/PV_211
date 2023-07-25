@@ -89,13 +89,12 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
          //RECT rect;
          //GetWindowRect(hwnd, &rect);
          //SetSize(hwnd, rect);
-
         HWND hEdit = CreateWindowEx
         (
             NULL,
             "Edit",
             "0",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | ES_READONLY,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT /*| ES_READONLY*/,
             g_i_START_X, g_i_START_Y,
             g_i_DISPLAY_WIDHT, g_i_DISPLAY_HEIGHT,
             hwnd,
@@ -223,19 +222,20 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_EQUAL), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Equal.ico", IMAGE_ICON,
                 g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
-
-        // SendMessage(GetDlgItem(hwnd, IDC_EDIT), WM_SETFONT, 54, true);
+        HFONT hFont = CreateFont(46, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET,
+            OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+            DEFAULT_PITCH | FF_DONTCARE, TEXT("Tahoma"));
+        SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
     }       break;
 
-
-    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLOREDIT: {
         if ((HWND)lParam == GetDlgItem(hwnd, IDC_EDIT))
         {
-            SetBkColor((HDC)wParam, RGB(0, 0, 255));
-            SetTextColor((HDC)wParam, 0x00FFFF);
+            SetBkColor((HDC)wParam, RGB(0, 120, 255));
+            SetTextColor((HDC)wParam, 0xffffff);
             return (INT_PTR)GetStockObject(NULL_BRUSH);
         }
-        break;
+    } break;
     case WM_COMMAND: {
         CONST INT SIZE = 256;
         CHAR SZ_buffer[SIZE] = {};
@@ -297,7 +297,6 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             operation_changed = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
-
             if (input) {
                 SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
                 b = strtod(SZ_buffer, NULL);
@@ -316,27 +315,42 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
         }
     } break;
+    case WM_KEYUP: {
+        if (wParam == '*')SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
+    }break;
     case WM_KEYDOWN: {
         switch (wParam)
         {
         case VK_OEM_PLUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_PLUS, 0); break;
         case VK_OEM_MINUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
+        case VK_OEM_2:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
+
+        case VK_ADD:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_PLUS, 0); break;
+        case VK_SUBTRACT:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
         case VK_MULTIPLY:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0); break;
         case VK_DIVIDE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
         case VK_RETURN:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0); break;
+        case VK_DELETE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_CLAER, 0); break;
+        case VK_ESCAPE:SendMessage(hwnd, WM_CLOSE, 0, 0); break;
         }
-        if (wParam == VK_OEM_PERIOD)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
 
-        if (wParam >= 0x30 && wParam <= 0x39) {
-            SendMessage(hwnd, WM_COMMAND, wParam - 0x30 + 1000, 0);
+        if (wParam == VK_OEM_PERIOD || wParam == VK_DECIMAL)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
+        if (GetKeyState(VK_LSHIFT)<0) {
+            if (wParam == 0x38)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
         }
+        else {
+            if (wParam >= 0x30 && wParam <= 0x39) SendMessage(hwnd, WM_COMMAND, wParam - 0x30 + 1000, 0);
+        }
+        if (wParam >= 0x60 && wParam <= 0x69) { SendMessage(hwnd, WM_COMMAND, wParam - 0x60 + 1000, 0); }
+
+
     }break;
-    case WM_SIZE:
+
     case WM_MOVE: {
         RECT rect;
         GetWindowRect(hwnd, &rect);
         SetSize(hwnd, rect);
-    }                        break;
+    }   break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_CLOSE:
         // if (MessageBox(hwnd, "¬ы действительно хотите закрыть окно?", "Question", MB_YESNO | MB_ICONQUESTION) == IDYES) {
@@ -360,3 +374,7 @@ void SetSize(HWND hwnd, RECT rect) {
         horizontal, vertical, height, width);
     SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)sz_message);
 }
+
+
+
+

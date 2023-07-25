@@ -7,7 +7,7 @@
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "Mouse";
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+void CreateToolTipForRect(HWND hwndParent, CHAR* sz_message);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow) {
 
@@ -33,12 +33,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         return 0;
     }
 
-
-    /* INITCOMMONCONTROLSEX icc;
-     InitCommonControlsEx(&icc);
-     icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
-     icc.dwICC = ICC_BAR_CLASSES;*/
-
     HWND hwnd = CreateWindowEx(
         NULL,
         g_sz_MY_WINDOW_CLASS,
@@ -59,17 +53,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
-    HWND tooltip_hwnd = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, "TooltipIM", WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        hwnd, (HMENU)IDC_TOOLTIP1, (HINSTANCE)GetModuleHandle(NULL), NULL);
-    RECT rect;
-    GetWindowRect(hwnd, &rect);
-    SetWindowPos(tooltip_hwnd, HWND_TOPMOST,
-        0, 0, 0, 0,
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    SendMessage(tooltip_hwnd, TTM_SETMAXTIPWIDTH, 0, 200);
-    SendMessage(tooltip_hwnd, TTM_SETDELAYTIME, TTDT_AUTOPOP, 1500);
 
     MSG msg;
     while (GetMessage(&msg, 0, 0, 0) > 0) {
@@ -82,14 +65,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     INT mouse_X, mouse_Y;
-    TOOLINFO ti = { 0 };
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = hwnd;
-    ti.hinst = (HINSTANCE)GetModuleHandle(NULL);
-    ti.uId = 1;
     TRACKMOUSEEVENT tg;
-    tg.cbSize = sizeof(tg);    tg.dwFlags = TME_HOVER/*| TME_LEAVE*/;    tg.hwndTrack = hwnd;    tg.dwHoverTime = HOVER_DEFAULT;
+    tg.cbSize = sizeof(tg);
+    tg.dwFlags = TME_HOVER/*| TME_LEAVE*/;
+    tg.hwndTrack = hwnd;
+    tg.dwHoverTime = HOVER_DEFAULT;
     TrackMouseEvent(&tg);
     SendMessage(GetDlgItem(hwnd, IDC_TOOLTIP1), TTM_ACTIVATE, true, 0);
     switch (uMsg)
@@ -102,16 +82,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         CONST INT SIZE = 256;
         CHAR sz_message[SIZE]{};
         sprintf(sz_message, "Координаты % d * %d.", mouse_X, mouse_Y);
-        RECT rect;
-        GetWindowRect(hwnd, &rect);
-        ti.lpszText = sz_message;
-        ti.rect.left = rect.left;
-        ti.rect.top = rect.top;
-        ti.rect.right = rect.right;
-        ti.rect.bottom = rect.bottom;
-        ti.lpszText = sz_message;
-        SendMessage(GetDlgItem(hwnd, IDC_TOOLTIP1), TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-        //TrackMouseEvent(&tg);
+        CreateToolTipForRect(hwnd, sz_message);
     }break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_CLOSE:
@@ -121,4 +92,25 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     default: return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+
+
+void CreateToolTipForRect(HWND hwndParent, CHAR* sz_message)
+{
+    HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        hwndParent, NULL, GetModuleHandle(NULL), NULL);
+    SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    TOOLINFO ti = { 0 };
+    ti.cbSize = sizeof(TOOLINFO);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = hwndParent;
+    ti.hinst = GetModuleHandle(NULL);
+    ti.lpszText = (LPSTR)sz_message;
+    GetClientRect(hwndParent, &ti.rect);
+    SendMessage(hwndTT, TTM_SETDELAYTIME, TTDT_RESHOW, 1500);
+    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
+    //    DestroyWindow(hwndTT);
 }
