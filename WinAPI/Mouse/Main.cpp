@@ -45,7 +45,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         hInstance,
         NULL
     );
-
     if (hwnd == 0) {
         MessageBox(NULL, "Окно не было созданно", "Error", MB_OK | MB_ICONERROR);
         return 0;
@@ -64,26 +63,25 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    INT mouse_X, mouse_Y;
     TRACKMOUSEEVENT tg;
     tg.cbSize = sizeof(tg);
-    tg.dwFlags = TME_HOVER/*| TME_LEAVE*/;
+    tg.dwFlags = TME_HOVER;
     tg.hwndTrack = hwnd;
     tg.dwHoverTime = HOVER_DEFAULT;
     TrackMouseEvent(&tg);
-    SendMessage(GetDlgItem(hwnd, IDC_TOOLTIP1), TTM_ACTIVATE, true, 0);
     switch (uMsg)
     {
     case WM_CREATE: {} break;
     case WM_COMMAND: {} break;
     case WM_MOUSEHOVER: {
-        mouse_X = GET_X_LPARAM(lParam);
-        mouse_Y = GET_Y_LPARAM(lParam);
+        INT mouse_X = GET_X_LPARAM(lParam);
+        INT mouse_Y = GET_Y_LPARAM(lParam);
         CONST INT SIZE = 256;
         CHAR sz_message[SIZE]{};
         sprintf(sz_message, "Координаты % d * %d.", mouse_X, mouse_Y);
         CreateToolTipForRect(hwnd, sz_message);
     }break;
+    case WM_MOVE:break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_CLOSE:
         if (MessageBox(hwnd, "Вы действительно хотите закрыть окно?", "Question", MB_YESNO | MB_ICONQUESTION) == IDYES) {
@@ -98,12 +96,12 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 void CreateToolTipForRect(HWND hwndParent, CHAR* sz_message)
 {
     HWND hwndTT = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTM_ACTIVATE,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         hwndParent, NULL, GetModuleHandle(NULL), NULL);
     SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0,
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    TOOLINFO ti = { 0 };
+    TOOLINFO ti;
     ti.cbSize = sizeof(TOOLINFO);
     ti.uFlags = TTF_SUBCLASS;
     ti.hwnd = hwndParent;
@@ -112,5 +110,5 @@ void CreateToolTipForRect(HWND hwndParent, CHAR* sz_message)
     GetClientRect(hwndParent, &ti.rect);
     SendMessage(hwndTT, TTM_SETDELAYTIME, TTDT_RESHOW, 1500);
     SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM)(LPTOOLINFO)&ti);
-    //    DestroyWindow(hwndTT);
+
 }

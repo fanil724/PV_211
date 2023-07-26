@@ -79,7 +79,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
     switch (uMsg)
     {
     case WM_CREATE: {
@@ -94,7 +93,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL,
             "Edit",
             "0",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT /*| ES_READONLY*/,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | ES_READONLY,
             g_i_START_X, g_i_START_Y,
             g_i_DISPLAY_WIDHT, g_i_DISPLAY_HEIGHT,
             hwnd,
@@ -102,6 +101,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             GetModuleHandle(NULL),
             NULL
         );
+
         CHAR sz_btn_name[] = "0";
         INT number = 1;
         for (int i = 0; i < 3; i++) {
@@ -170,7 +170,6 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_i_BTN_SIZE, g_i_BTN_SIZE * 2 + g_i_DISTANCE,
             hwnd, (HMENU)IDC_BUTTON_EQUAL, GetModuleHandle(NULL), NULL
         );
-
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_1), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/One.ico", IMAGE_ICON,
                 LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
@@ -245,7 +244,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         static DOUBLE b = 0;
         static bool stored = false;
         static bool input = false;
-        static bool operation_changed = false;
+        static bool operation_input = false;
         static char operation = '0';
         static char old_operation = 0;
         if (LOWORD(wParam) >= IDC_BUTTON_0 && LOWORD(wParam) <= IDC_BUTTON_9) {
@@ -275,7 +274,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (LOWORD(wParam) == IDC_BUTTON_CLAER) {
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"0");
-            a = 0; stored = false;
+            a = 0; stored = false; input = false; operation_input = false;
         }
         if (LOWORD(wParam) >= IDC_BUTTON_PLUS && LOWORD(wParam) <= IDC_BUTTON_SLASH) {
             if (a == 0) {
@@ -284,7 +283,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
             stored = true;
             input = false;
-            if (old_operation == operation && operation_changed) {
+            if (operation_input) {
                 SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0);
             }
             switch (LOWORD(wParam))
@@ -294,7 +293,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case IDC_BUTTON_SLASH:operation = '/'; break;
             case IDC_BUTTON_ASTER:operation = '*'; break;
             }
-            operation_changed = true;
+            operation_input = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
             if (input) {
@@ -309,15 +308,12 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             case '*': a *= b; break;
             case '/': a /= b; break;
             }
-            old_operation = operation;
-            operation_changed = false;
+
+            operation_input = false;
             sprintf(SZ_buffer, "%g", a);
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)SZ_buffer);
         }
     } break;
-    case WM_KEYUP: {
-        if (wParam == '*')SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
-    }break;
     case WM_KEYDOWN: {
         switch (wParam)
         {
@@ -335,17 +331,14 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
 
         if (wParam == VK_OEM_PERIOD || wParam == VK_DECIMAL)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
-        if (GetKeyState(VK_LSHIFT)<0) {
+        if (GetKeyState(VK_LSHIFT) < 0) {
             if (wParam == 0x38)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
         }
         else {
             if (wParam >= 0x30 && wParam <= 0x39) SendMessage(hwnd, WM_COMMAND, wParam - 0x30 + 1000, 0);
         }
         if (wParam >= 0x60 && wParam <= 0x69) { SendMessage(hwnd, WM_COMMAND, wParam - 0x60 + 1000, 0); }
-
-
     }break;
-
     case WM_MOVE: {
         RECT rect;
         GetWindowRect(hwnd, &rect);
