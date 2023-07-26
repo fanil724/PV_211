@@ -79,6 +79,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
     switch (uMsg)
     {
     case WM_CREATE: {
@@ -236,6 +237,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
     } break;
     case WM_COMMAND: {
+        SetFocus(hwnd);
         CONST INT SIZE = 256;
         CHAR SZ_buffer[SIZE] = {};
         HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
@@ -245,8 +247,8 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         static bool stored = false;
         static bool input = false;
         static bool operation_input = false;
-        static char operation = '0';
-        static char old_operation = 0;
+        static char operation = 0;
+        //static char old_operation = 0;
         if (LOWORD(wParam) >= IDC_BUTTON_0 && LOWORD(wParam) <= IDC_BUTTON_9) {
             input = true;
             if (stored && operation != '0') {
@@ -274,8 +276,9 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (LOWORD(wParam) == IDC_BUTTON_CLAER) {
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"0");
-            a = 0; stored = false; input = false; operation_input = false;
-            //SetFocus(hEdit);
+            a = 0; b = 0; stored = false; input = false; operation_input = false;
+            operation = 0;
+            //SetFocus(hwnd);
         }
         if (LOWORD(wParam) >= IDC_BUTTON_PLUS && LOWORD(wParam) <= IDC_BUTTON_SLASH) {
             SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
@@ -317,9 +320,9 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
     } break;
     case WM_KEYDOWN: {
-        char symbol[2]{};
-        symbol[0] = LOWORD(wParam);
-        //MessageBox(hwnd, symbol, "Symbol", MB_OK);
+        /* char symbol[2]{};
+         symbol[0] = LOWORD(wParam);*/
+         //MessageBox(hwnd, symbol, "Symbol", MB_OK);
         switch (LOWORD(wParam))
         {
         case VK_OEM_PLUS:
@@ -330,18 +333,18 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         case VK_OEM_2:
         case VK_DIVIDE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
-               
+
         case VK_MULTIPLY:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0); break;
-        
+
         case VK_RETURN:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0); break;
 
         case VK_BACK:
         case VK_DELETE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_CLAER, 0); break;
+
         case VK_ESCAPE:SendMessage(hwnd, WM_CLOSE, 0, 0); break;
         }
-        
         if (wParam == VK_OEM_PERIOD || wParam == VK_DECIMAL)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
-        if (GetKeyState(VK_LSHIFT) < 0) {
+        if (GetKeyState(VK_SHIFT) < 0) {
             if (wParam == 0x38)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
         }
         else {
@@ -349,6 +352,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (wParam >= 0x60 && wParam <= 0x69) { SendMessage(hwnd, WM_COMMAND, wParam - 0x60 + 1000, 0); }
     }break;
+    //case WM_SIZE:
     case WM_MOVE: {
         RECT rect;
         GetWindowRect(hwnd, &rect);
