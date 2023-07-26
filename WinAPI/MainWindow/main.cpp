@@ -277,9 +277,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             a = 0; stored = false; input = false; operation_input = false;
         }
         if (LOWORD(wParam) >= IDC_BUTTON_PLUS && LOWORD(wParam) <= IDC_BUTTON_SLASH) {
+            SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
+            b = strtod(SZ_buffer, NULL);
             if (a == 0) {
-                SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
-                a = strtod(SZ_buffer, NULL);
+                a = b;
             }
             stored = true;
             input = false;
@@ -296,8 +297,8 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             operation_input = true;
         }
         if (LOWORD(wParam) == IDC_BUTTON_EQUAL) {
+            SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
             if (input) {
-                SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
                 b = strtod(SZ_buffer, NULL);
             }
             input = false;
