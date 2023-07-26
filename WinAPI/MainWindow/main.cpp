@@ -275,6 +275,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if (LOWORD(wParam) == IDC_BUTTON_CLAER) {
             SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"0");
             a = 0; stored = false; input = false; operation_input = false;
+            //SetFocus(hEdit);
         }
         if (LOWORD(wParam) >= IDC_BUTTON_PLUS && LOWORD(wParam) <= IDC_BUTTON_SLASH) {
             SendMessage(hEdit, WM_GETTEXT, SIZE, (LPARAM)SZ_buffer);
@@ -316,21 +317,29 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
     } break;
     case WM_KEYDOWN: {
-        switch (wParam)
+        char symbol[2]{};
+        symbol[0] = LOWORD(wParam);
+        //MessageBox(hwnd, symbol, "Symbol", MB_OK);
+        switch (LOWORD(wParam))
         {
-        case VK_OEM_PLUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_PLUS, 0); break;
-        case VK_OEM_MINUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
-        case VK_OEM_2:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
-
+        case VK_OEM_PLUS:
         case VK_ADD:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_PLUS, 0); break;
-        case VK_SUBTRACT:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
-        case VK_MULTIPLY:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0); break;
+
+        case VK_SUBTRACT:
+        case VK_OEM_MINUS:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_MINUS, 0); break;
+
+        case VK_OEM_2:
         case VK_DIVIDE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_SLASH, 0); break;
+               
+        case VK_MULTIPLY:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0); break;
+        
         case VK_RETURN:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0); break;
+
+        case VK_BACK:
         case VK_DELETE:SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_CLAER, 0); break;
         case VK_ESCAPE:SendMessage(hwnd, WM_CLOSE, 0, 0); break;
         }
-
+        
         if (wParam == VK_OEM_PERIOD || wParam == VK_DECIMAL)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_POINT, 0);
         if (GetKeyState(VK_LSHIFT) < 0) {
             if (wParam == 0x38)SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_ASTER, 0);
