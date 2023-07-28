@@ -13,6 +13,9 @@ CONST INT g_i_START_X = 10;      //отступ от начала окна
 CONST INT g_i_START_Y = 10;      //отступ от начала окна
 CONST INT g_i_DISPLAY_WIDHT = (g_i_BTN_SIZE + g_i_DISTANCE) * 5 - g_i_DISTANCE;
 CONST INT g_i_DISPLAY_HEIGHT = 45;
+CONST INT g_i_DISPLAY_FONT_HEIGHT = g_i_DISPLAY_HEIGHT - 2;
+CONST INT g_i_DISPLAY_FONT_WIDHT = g_i_DISPLAY_HEIGHT / 2.5;
+
 
 INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetSize(HWND hwnd, RECT rect);
@@ -34,6 +37,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     wc.hCursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_ARROW));
     // wc.hCursor = (HCURSOR)LoadImage(hInstance, "Protoss.cur", IMAGE_CURSOR, LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE);
     wc.hbrBackground = (HBRUSH)COLOR_ACTIVEBORDER;
+    //wc.hbrBackground = CreateSolidBrush(RGB(0,0,200));
+
 
     wc.hInstance = hInstance;
     wc.lpfnWndProc = (WNDPROC)WndProc; //TODO: указать процедуру окна
@@ -174,35 +179,16 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_i_BTN_SIZE, g_i_BTN_SIZE * 2 + g_i_DISTANCE,
             hwnd, (HMENU)IDC_BUTTON_EQUAL, GetModuleHandle(NULL), NULL
         );
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_1), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/One.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_2), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Two.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_3), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Free.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_4), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Four.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_5), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Five.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_6), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Six.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_7), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Seven.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_8), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Vosem.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
-        SendMessage(GetDlgItem(hwnd, IDC_BUTTON_9), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Nine.ico", IMAGE_ICON,
-                LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
+        CONST INT SIZE = 256;
+        CHAR sz_icon_name[SIZE]{};
+        for (int number = 1; number < 10; number++) {
+            sprintf(sz_icon_name, "Icon/%d.ico", number);
+            SendMessage(GetDlgItem(hwnd, 1000 + number), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
+                (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), sz_icon_name, IMAGE_ICON,
+                    LR_DEFAULTSIZE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
+        }
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_0), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
-            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Zero.ico", IMAGE_ICON,
+            (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/0.ico", IMAGE_ICON,
                 g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_DEFAULTSIZE, LR_LOADFROMFILE));
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_POINT), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Point.ico", IMAGE_ICON,
@@ -225,12 +211,11 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_EQUAL), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Equal.ico", IMAGE_ICON,
                 g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
-        HFONT hFont = CreateFont(46, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET,
+        HFONT hFont = CreateFont(g_i_DISPLAY_FONT_HEIGHT, g_i_DISPLAY_FONT_WIDHT, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET,
             OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
             DEFAULT_PITCH | FF_DONTCARE, TEXT("Tahoma"));
         SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
     }       break;
-
     case WM_CTLCOLOREDIT: {
         if ((HWND)lParam == GetDlgItem(hwnd, IDC_EDIT))
         {
@@ -239,6 +224,15 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return (INT_PTR)GetStockObject(NULL_BRUSH);
         }
     } break;
+   /* case WM_CTLCOLORBTN:
+    {
+        if ((HWND)lParam == GetDlgItem(hwnd, IDC_BUTTON_CLAER))
+        {
+            SetBkMode((HDC)wParam, TRANSPARENT);
+            SetBkColor((HDC)wParam, RGB(255, 0,0));
+            return (INT_PTR)GetStockObject(NULL_BRUSH);
+        }
+    }*/
     case WM_COMMAND: {
         SetFocus(hwnd);
         CONST INT SIZE = 256;
