@@ -2,6 +2,9 @@
 #include<Windows.h>
 #include"resource.h"
 #include<stdio.h>
+#include<winuser.h>
+#include<Commctrl.h>
+
 
 CONST CHAR g_sz_MY_WINDOW_CLASS[] = "Ñalculator";
 CONST INT g_i_BTN_SIZE = 50;     //g global, i int
@@ -94,7 +97,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL,
             "Edit",
             "0",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | ES_READONLY,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT /*| ES_READONLY*/,
             g_i_START_X, g_i_START_Y,
             g_i_DISPLAY_WIDHT, g_i_DISPLAY_HEIGHT,
             hwnd,
@@ -222,7 +225,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SendMessage(GetDlgItem(hwnd, IDC_BUTTON_EQUAL), BM_SETIMAGE, (WPARAM)IMAGE_ICON,
             (LPARAM)(HICON)LoadImage(GetModuleHandle(NULL), "Icon/Equal.ico", IMAGE_ICON,
                 g_i_BTN_SIZE + g_i_DISTANCE, g_i_BTN_SIZE * 2 + g_i_DISTANCE, LR_LOADFROMFILE));
-        HFONT hFont = CreateFont(46, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET,
+        HFONT hFont = CreateFont(46, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET,
             OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
             DEFAULT_PITCH | FF_DONTCARE, TEXT("Tahoma"));
         SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
@@ -287,10 +290,10 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 a = b;
             }
             stored = true;
-            input = false;
-            if (operation_input) {
+            if (input && operation_input) {
                 SendMessage(hwnd, WM_COMMAND, IDC_BUTTON_EQUAL, 0);
             }
+            input = false;
             switch (LOWORD(wParam))
             {
             case IDC_BUTTON_PLUS:operation = '+'; break;
@@ -352,7 +355,7 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         if (wParam >= 0x60 && wParam <= 0x69) { SendMessage(hwnd, WM_COMMAND, wParam - 0x60 + 1000, 0); }
     }break;
-    //case WM_SIZE:
+        //case WM_SIZE:
     case WM_MOVE: {
         RECT rect;
         GetWindowRect(hwnd, &rect);
@@ -381,7 +384,3 @@ void SetSize(HWND hwnd, RECT rect) {
         horizontal, vertical, height, width);
     SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)sz_message);
 }
-
-
-
-
