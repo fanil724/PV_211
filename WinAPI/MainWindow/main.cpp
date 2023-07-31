@@ -224,15 +224,6 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return (INT_PTR)GetStockObject(NULL_BRUSH);
         }
     } break;
-   /* case WM_CTLCOLORBTN:
-    {
-        if ((HWND)lParam == GetDlgItem(hwnd, IDC_BUTTON_CLAER))
-        {
-            SetBkMode((HDC)wParam, TRANSPARENT);
-            SetBkColor((HDC)wParam, RGB(255, 0,0));
-            return (INT_PTR)GetStockObject(NULL_BRUSH);
-        }
-    }*/
     case WM_COMMAND: {
         SetFocus(hwnd);
         CONST INT SIZE = 256;
@@ -356,9 +347,8 @@ INT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }   break;
     case WM_DESTROY: PostQuitMessage(0); break;
     case WM_CLOSE:
-        // if (MessageBox(hwnd, "¬ы действительно хотите закрыть окно?", "Question", MB_YESNO | MB_ICONQUESTION) == IDYES) {
         DestroyWindow(hwnd);
-        //}
+
         break;
     default: return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
