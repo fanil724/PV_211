@@ -2,7 +2,7 @@
 #include<Windows.h>
 #include"resource.h"
 #include<RichEdit.H>
-#include<shellapi.h>
+#include<Shellapi.h>
 #include<wingdi.h>
 #include<stdio.h>
 #include <string>
@@ -43,7 +43,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
     }
 
     HWND hwnd = CreateWindowEx(
-        NULL,
+        WS_EX_ACCEPTFILES,
         g_sz_CLASS_NAME,
         g_sz_CLASS_NAME,
         WS_OVERLAPPEDWINDOW,
@@ -59,12 +59,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         MessageBox(NULL, "Window greation  failed,", "Error", MB_OK | MB_ICONERROR);
         return 0;
     }
+
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
-
     MSG msg;
     while (GetMessage(&msg, 0, 0, 0) > 0) {
-        DragAcceptFiles(hwnd, TRUE);
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -72,16 +71,18 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 }
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
     switch (uMsg)
     {
     case WM_CREATE: {
+
         LoadLibrary("riched20.dll");
         RECT window_rect;
         RECT client_rect;
         GetWindowRect(hwnd, &window_rect);
         GetClientRect(hwnd, &client_rect);
         HWND hEdit = CreateWindowEx(
-            WS_EX_ACCEPTFILES, RICHEDIT_CLASS, "",
+            NULL, RICHEDIT_CLASS, "",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_HSCROLL | WS_VSCROLL | ES_MULTILINE | ES_AUTOHSCROLL | ES_AUTOHSCROLL,
             0, 0,
             client_rect.right, client_rect.bottom,
@@ -91,14 +92,16 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL
         );
 
+        if (strstr(GetCommandLineA(), " C")) {
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), " C") + 1);
+        }
+
         //  HWND hStatus = CreateWindowEx(0,STATUSCLASSNAME);
 
     }break;
     case WM_DROPFILES: {
-        INT SIZE = DragQueryFile((HDROP)wParam, 0, NULL, 0);
-        CHAR* szFileName = new CHAR[SIZE + 1];
-        DragQueryFile((HDROP)wParam, 0, szFileName, SIZE);
-        MessageBox(NULL, szFileName, "title", MB_OK);
+        CHAR szFileName[MAX_PATH] = {};
+        DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
         LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
         DragFinish((HDROP)wParam);
     }break;
