@@ -55,6 +55,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         NULL
     );
 
+    //MessageBox(hwnd, lpCmdLine, "Info", MB_OK);
+
     if (hwnd == NULL) {
         MessageBox(NULL, "Window greation  failed,", "Error", MB_OK | MB_ICONERROR);
         return 0;
@@ -92,8 +94,9 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL
         );
 
-        if (strstr(GetCommandLineA(), "exe ")) {
-            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe ") + 4);
+        if (strstr(GetCommandLineA(), "exe")) {
+           //MessageBox(hwnd, strstr(GetCommandLineA(), "exe") + 5, "Info", MB_OK);
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") +5);
         }
 
         //  HWND hStatus = CreateWindowEx(0,STATUSCLASSNAME);
