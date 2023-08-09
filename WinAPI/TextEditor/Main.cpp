@@ -92,8 +92,8 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             NULL
         );
 
-        if (strstr(GetCommandLineA(), " C")) {
-            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), " C") + 1);
+        if (strstr(GetCommandLineA(), "exe ")) {
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe ") + 4);
         }
 
         //  HWND hStatus = CreateWindowEx(0,STATUSCLASSNAME);
