@@ -17,11 +17,12 @@ CONST CHAR* g_sz_FONT[] = { "Times New Roman","Georgia","Arial","Arial Black","T
 COLORREF g_rgbBackground = RGB(255, 255, 255);
 COLORREF g_rgbCustom[16] = {};
 
+
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPCSTR lpszFileContent);
 BOOL SaveTextFileFromEdit(HWND hEsit, LPCSTR lpszFileName);
-
+VOID SelectFont(HWND hwnd);
 VOID SelectColor(HWND hwnd);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
@@ -103,6 +104,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
 
     }break;
+
     case WM_DROPFILES: {
         CHAR szFileName[MAX_PATH] = {};
         DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
@@ -147,7 +149,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }break;
         case ID_FILE_EXIT:SendMessage(hwnd, WM_CLOSE, 0, 0); break;
         case ID_FORMAT_FONT: {
-            DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_FORMAT_FONT), hwnd, DlgProcFont, 0);
+            SelectFont(hwnd);
         }break;
         case ID_FORMAT_COLOR:SelectColor(hwnd); break;
         }
@@ -337,10 +339,13 @@ BOOL SaveTextFileFromEdit(HWND hEdit, LPCSTR lpszFileName) {
     return bSuccess;
 }
 
+VOID SelectFont(HWND hwnd) {
 
+    CHOOSEFONT cc = { sizeof(CHOOSEFONT) };
+}
 VOID SelectColor(HWND hwnd) {
     HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
-    HDC hdc = GetDC(hEdit);
+    HDC hdc = GetDC(hwnd);
     CHOOSECOLOR cc = { sizeof(CHOOSECOLOR) };
     cc.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ANYCOLOR;
     cc.hwndOwner = hwnd;
@@ -348,5 +353,11 @@ VOID SelectColor(HWND hwnd) {
     cc.lpCustColors = g_rgbCustom;
     if (ChooseColor(&cc))g_rgbBackground = cc.rgbResult;
 
-    //SetTextColor(hdc,);
+    CHARFORMAT ch;
+    ZeroMemory(&ch, sizeof(CHARFORMAT));
+    ch.cbSize = sizeof(ch);
+    ch.dwMask = CFM_COLOR;
+    ch.crTextColor = g_rgbBackground;
+    SendMessage(hEdit, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&ch);
+
 }
