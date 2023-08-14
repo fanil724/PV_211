@@ -73,11 +73,11 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 }
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
+    static CHAR szFileName[MAX_PATH] = {};
+    static CHAR szFileContent = NULL;
     switch (uMsg)
     {
     case WM_CREATE: {
-
         LoadLibrary("riched20.dll");
         RECT window_rect;
         RECT client_rect;
@@ -95,8 +95,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         );
 
         if (strstr(GetCommandLineA(), "exe")) {
-           //MessageBox(hwnd, strstr(GetCommandLineA(), "exe") + 5, "Info", MB_OK);
-            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") +5);
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") + 5);
         }
 
         //  HWND hStatus = CreateWindowEx(0,STATUSCLASSNAME);
@@ -112,8 +111,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN: {
-            CHAR szFileName[MAX_PATH] = {};
-
+            //CHAR szFileName[MAX_PATH] = {};
             OPENFILENAME ofn;
             ZeroMemory(&ofn, sizeof(ofn));
             ofn.lStructSize = sizeof(ofn);
@@ -125,9 +123,14 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ofn.lpstrDefExt = "txt";
 
             if (GetOpenFileName(&ofn)) LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+
+        }break;
+        case ID_FILE_SAVE: {
+            if (szFileName[0] == 0) SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVEAS, 0);
+            else SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
         }break;
         case ID_FILE_SAVEAS: {
-            CHAR szFileName[MAX_PATH] = {};
+            //CHAR szFileName[MAX_PATH] = {};
             OPENFILENAME ofn;
             ZeroMemory(&ofn, sizeof(ofn));
             ofn.lStructSize = sizeof(ofn);
@@ -144,11 +147,29 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         case ID_FORMAT_FONT: {
             DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_FORMAT_FONT), hwnd, DlgProcFont, 0);
         }break;
-
         }
     } break;
     case WM_DESTROY:  PostQuitMessage(0); break;
-    case WM_CLOSE:DestroyWindow(hwnd); break;
+    case WM_CLOSE: {
+        BOOL close = false;
+        //CHAR sz_buffer[INT_MAX/2] = {};
+        HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+        DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+        LPSTR lpszText = (LPSTR)GlobalAlloc(GPTR, dwTextLengt + 1);
+        if (lpszText != NULL) {
+            SendMessage(GetDlgItem(hwnd, IDC_EDIT), WM_GETTEXT, UINT_MAX, (LPARAM)lpszText);
+            if (lpszText[0]) {
+
+                switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
+                case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
+                case IDNO: close = true;
+                }
+            }
+            else { close = true; }
+            GlobalFree(lpszText);
+        }
+        if (close)DestroyWindow(hwnd);
+    }break;
     default:return DefWindowProc(hwnd, uMsg, wParam, lParam); break;
     }
     return 0;
@@ -264,8 +285,6 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     return FALSE;
 }
-
-
 
 BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName) {
     BOOL bSuccess = FALSE;
