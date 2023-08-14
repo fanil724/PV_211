@@ -13,10 +13,16 @@ CONST CHAR* g_sz_INSCRIPTION[] = { "обычный","курсив","полужи
 CONST CHAR* g_sz_FONT[] = { "Times New Roman","Georgia","Arial","Arial Black","Tahoma",
 "Verdana","Trebuchet MS","Lucida Sans Unicode","Impact","Comic Sans MS","Courier New","Lucida Console" };
 
+
+COLORREF g_rgbBackground = RGB(255, 255, 255);
+COLORREF g_rgbCustom[16] = {};
+
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName);
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPCSTR lpszFileContent);
 BOOL SaveTextFileFromEdit(HWND hEsit, LPCSTR lpszFileName);
+
+VOID SelectColor(HWND hwnd);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
@@ -55,8 +61,6 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
         NULL
     );
 
-    //MessageBox(hwnd, lpCmdLine, "Info", MB_OK);
-
     if (hwnd == NULL) {
         MessageBox(NULL, "Window greation  failed,", "Error", MB_OK | MB_ICONERROR);
         return 0;
@@ -73,8 +77,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 }
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static CHAR szFileName[MAX_PATH] = {};
-    static CHAR szFileContent = NULL;
+    static CHAR lpszFileName[MAX_PATH] = {};
+    static LPSTR lpszFileContent = (LPSTR)GlobalAlloc(GPTR, 256);
     switch (uMsg)
     {
     case WM_CREATE: {
@@ -95,16 +99,14 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         );
 
         if (strstr(GetCommandLineA(), "exe")) {
-            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") + 5);
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") + 5, lpszFileContent);
         }
-
-        //  HWND hStatus = CreateWindowEx(0,STATUSCLASSNAME);
 
     }break;
     case WM_DROPFILES: {
         CHAR szFileName[MAX_PATH] = {};
         DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
-        LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+        LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName, lpszFileContent);
         DragFinish((HDROP)wParam);
     }break;
     case WM_COMMAND: {
@@ -117,17 +119,17 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = hwnd;
             ofn.lpstrFilter = "Text files: (*.txt)\0*.txt\0AllFiles (*.*)\0*.*\0 ";
-            ofn.lpstrFile = szFileName;
+            ofn.lpstrFile = lpszFileName;
             ofn.nMaxFile = MAX_PATH;
             ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
             ofn.lpstrDefExt = "txt";
 
-            if (GetOpenFileName(&ofn)) LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+            if (GetOpenFileName(&ofn)) LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), lpszFileName, lpszFileContent);
 
         }break;
         case ID_FILE_SAVE: {
-            if (szFileName[0] == 0) SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVEAS, 0);
-            else SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+            if (lpszFileName[0] == 0) SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVEAS, 0);
+            else SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), lpszFileName);
         }break;
         case ID_FILE_SAVEAS: {
             //CHAR szFileName[MAX_PATH] = {};
@@ -136,7 +138,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = hwnd;
             ofn.lpstrFilter = "Text files: (*.txt)\0*.txt\0AllFiles (*.*)\0*.*\0";
-            ofn.lpstrFile = szFileName;
+            ofn.lpstrFile = lpszFileName;
             ofn.nMaxFile = MAX_PATH;
             ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
             ofn.lpstrDefExt = "txt";
@@ -147,26 +149,34 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         case ID_FORMAT_FONT: {
             DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_FORMAT_FONT), hwnd, DlgProcFont, 0);
         }break;
+        case ID_FORMAT_COLOR:SelectColor(hwnd); break;
         }
     } break;
     case WM_DESTROY:  PostQuitMessage(0); break;
     case WM_CLOSE: {
-        BOOL close = false;
-        //CHAR sz_buffer[INT_MAX/2] = {};
+        BOOL close = FALSE;
         HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
         DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
         LPSTR lpszText = (LPSTR)GlobalAlloc(GPTR, dwTextLengt + 1);
         if (lpszText != NULL) {
             SendMessage(GetDlgItem(hwnd, IDC_EDIT), WM_GETTEXT, UINT_MAX, (LPARAM)lpszText);
-            if (lpszText[0]) {
-
+            if (lpszFileContent && strcmp(lpszFileContent, lpszText)) {
                 switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
                 case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
-                case IDNO: close = true;
+                case IDNO: close = TRUE;
                 }
             }
-            else { close = true; }
+            /* else if (lpszText[0]) {
+                 switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
+                 case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
+                 case IDNO: close = TRUE;
+                 }
+             }*/
+            else {
+                close = TRUE;
+            }
             GlobalFree(lpszText);
+            GlobalFree(lpszFileContent);
         }
         if (close)DestroyWindow(hwnd);
     }break;
@@ -199,7 +209,7 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         LOGFONT lf;
         ZeroMemory(&lf, sizeof(LOGFONT));
-        HFONT hFont = (HFONT)GetStockObject(ANSI_FIXED_FONT);
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
         GetObject(hFont, sizeof(LOGFONT), &lf);
         CHAR Height[SIZE] = {};
         CHAR Inscription[SIZE] = {};
@@ -257,9 +267,7 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             HWND hParent = GetParent(hwnd);
             SendMessage(GetDlgItem(hParent, IDC_EDIT), WM_SETFONT, (WPARAM)hFont, TRUE);
         }
-
         case IDCANCEL: EndDialog(hwnd, 0); break;
-
         }
         HWND hList = (HWND)lParam;
         if (LBN_SELCHANGE) {
@@ -286,17 +294,19 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return FALSE;
 }
 
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName) {
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPCSTR lpszFileContent) {
     BOOL bSuccess = FALSE;
     HANDLE hFile = CreateFile(lpszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
     if (hFile != INVALID_HANDLE_VALUE) {
         DWORD dwFileSize = GetFileSize(hFile, NULL);
         if (dwFileSize != UINT_MAX) {
             LPSTR lpszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
+            LPSTR lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
             if (lpszFileText) {
                 DWORD dwRead;
                 if (ReadFile(hFile, lpszFileText, dwFileSize, &dwRead, NULL)) {
                     lpszFileText[dwFileSize] = 0;
+                    strcpy(lpszFileContent, lpszFileText);
                     if (SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)lpszFileText)) bSuccess = TRUE;
                 }
                 GlobalFree(lpszFileText);
@@ -327,3 +337,16 @@ BOOL SaveTextFileFromEdit(HWND hEdit, LPCSTR lpszFileName) {
     return bSuccess;
 }
 
+
+VOID SelectColor(HWND hwnd) {
+    HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+    HDC hdc = GetDC(hEdit);
+    CHOOSECOLOR cc = { sizeof(CHOOSECOLOR) };
+    cc.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ANYCOLOR;
+    cc.hwndOwner = hwnd;
+    cc.rgbResult = g_rgbBackground;
+    cc.lpCustColors = g_rgbCustom;
+    if (ChooseColor(&cc))g_rgbBackground = cc.rgbResult;
+
+    //SetTextColor(hdc,);
+}
