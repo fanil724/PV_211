@@ -14,13 +14,15 @@ CONST CHAR* g_sz_FONT[] = { "Times New Roman","Georgia","Arial","Arial Black","T
 "Verdana","Trebuchet MS","Lucida Sans Unicode","Impact","Comic Sans MS","Courier New","Lucida Console" };
 
 
+HFONT g_hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+COLORREF g_RGB_Text = RGB(0, 0, 0);
 COLORREF g_rgbBackground = RGB(255, 255, 255);
 COLORREF g_rgbCustom[16] = {};
 
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPCSTR lpszFileContent);
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPSTR lpszFileContent);
 BOOL SaveTextFileFromEdit(HWND hEsit, LPCSTR lpszFileName);
 VOID SelectFont(HWND hwnd);
 VOID SelectColor(HWND hwnd);
@@ -80,6 +82,8 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static CHAR lpszFileName[MAX_PATH] = {};
     static LPSTR lpszFileContent = (LPSTR)GlobalAlloc(GPTR, 256);
+
+
     switch (uMsg)
     {
     case WM_CREATE: {
@@ -104,7 +108,6 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
 
     }break;
-
     case WM_DROPFILES: {
         CHAR szFileName[MAX_PATH] = {};
         DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
@@ -115,7 +118,6 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN: {
-            //CHAR szFileName[MAX_PATH] = {};
             OPENFILENAME ofn;
             ZeroMemory(&ofn, sizeof(ofn));
             ofn.lStructSize = sizeof(ofn);
@@ -134,7 +136,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             else SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), lpszFileName);
         }break;
         case ID_FILE_SAVEAS: {
-            //CHAR szFileName[MAX_PATH] = {};
+
             OPENFILENAME ofn;
             ZeroMemory(&ofn, sizeof(ofn));
             ofn.lStructSize = sizeof(ofn);
@@ -161,19 +163,16 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
         LPSTR lpszText = (LPSTR)GlobalAlloc(GPTR, dwTextLengt + 1);
         if (lpszText != NULL) {
-            SendMessage(GetDlgItem(hwnd, IDC_EDIT), WM_GETTEXT, UINT_MAX, (LPARAM)lpszText);
-            if (lpszFileContent && strcmp(lpszFileContent, lpszText)) {
+            SendMessage(hEdit, WM_GETTEXT, UINT_MAX, (LPARAM)lpszText);
+            MessageBox(hwnd, strcmp(lpszFileContent, lpszText) == 0 ? "YES" : "NO", "INFO", MB_OK);
+            MessageBox(hwnd, lpszFileContent, "INFO", MB_OK);
+
+            if (strcmp(lpszFileContent, lpszText) != 0) {
                 switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
                 case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
-                case IDNO: close = TRUE;
+                case IDNO: close = TRUE; break;
                 }
             }
-            /* else if (lpszText[0]) {
-                 switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
-                 case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
-                 case IDNO: close = TRUE;
-                 }
-             }*/
             else {
                 close = TRUE;
             }
@@ -296,22 +295,24 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return FALSE;
 }
 
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPCSTR lpszFileContent) {
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPSTR lpszFileContent) {
     BOOL bSuccess = FALSE;
     HANDLE hFile = CreateFile(lpszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
     if (hFile != INVALID_HANDLE_VALUE) {
         DWORD dwFileSize = GetFileSize(hFile, NULL);
         if (dwFileSize != UINT_MAX) {
             LPSTR lpszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
-            LPSTR lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
+            //lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
             if (lpszFileText) {
                 DWORD dwRead;
                 if (ReadFile(hFile, lpszFileText, dwFileSize, &dwRead, NULL)) {
                     lpszFileText[dwFileSize] = 0;
                     strcpy(lpszFileContent, lpszFileText);
+
                     if (SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)lpszFileText)) bSuccess = TRUE;
                 }
                 GlobalFree(lpszFileText);
+
             }
             CloseHandle(hFile);
         }
@@ -340,8 +341,38 @@ BOOL SaveTextFileFromEdit(HWND hEdit, LPCSTR lpszFileName) {
 }
 
 VOID SelectFont(HWND hwnd) {
+    CHOOSEFONT cf;
+    LOGFONT lf;
+    HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
 
-    CHOOSEFONT cc = { sizeof(CHOOSEFONT) };
+    ZeroMemory(&cf, sizeof(cf));
+    ZeroMemory(&lf, sizeof(lf));
+
+    GetObject(g_hFont, sizeof(LOGFONT), &lf);
+
+    cf.lStructSize = sizeof(cf);
+    cf.hwndOwner = hwnd;
+
+    cf.Flags = CF_EFFECTS | CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
+    cf.hInstance = GetModuleHandle(NULL);
+    cf.lpLogFont = &lf;
+    cf.rgbColors = g_RGB_Text;
+
+    if (ChooseFont(&cf))
+    {
+        HFONT hf = CreateFontIndirect(&lf);
+        if (hf)
+        {
+            g_hFont = hf;
+        }
+        else
+        {
+            MessageBox(hwnd, "Font creation failed", "Error", MB_OK | MB_ICONERROR);
+        }
+        g_RGB_Text = cf.rgbColors;
+    }
+    SendMessage(hEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+    SetFocus(hEdit);
 }
 VOID SelectColor(HWND hwnd) {
     HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
@@ -359,5 +390,5 @@ VOID SelectColor(HWND hwnd) {
     ch.dwMask = CFM_COLOR;
     ch.crTextColor = g_rgbBackground;
     SendMessage(hEdit, EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&ch);
-
+    SetFocus(hEdit);
 }
