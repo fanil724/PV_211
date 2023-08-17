@@ -22,10 +22,11 @@ COLORREF g_rgbCustom[16] = {};
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPSTR lpszFileContent);
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName);
 BOOL SaveTextFileFromEdit(HWND hEsit, LPCSTR lpszFileName);
 VOID SelectFont(HWND hwnd);
 VOID SelectColor(HWND hwnd);
+
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nCmdShow)
 {
@@ -81,8 +82,7 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, IN
 
 LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static CHAR lpszFileName[MAX_PATH] = {};
-    static LPSTR lpszFileContent = (LPSTR)GlobalAlloc(GPTR, 256);
-
+    static LPSTR lpszFileContent = NULL;
 
     switch (uMsg)
     {
@@ -104,19 +104,77 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         );
 
         if (strstr(GetCommandLineA(), "exe")) {
-            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") + 5, lpszFileContent);
+            LoadTextFileToEdit(hEdit, strstr(GetCommandLineA(), "exe") + 5);
+            DWORD dwTextLenght = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+            GlobalFree(lpszFileContent);
+            lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwTextLenght + 1);
+            SendMessage(hEdit, WM_GETTEXT, dwTextLenght + 1, (LPARAM)lpszFileContent);
         }
 
     }break;
     case WM_DROPFILES: {
-        CHAR szFileName[MAX_PATH] = {};
-        DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
-        LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName, lpszFileContent);
-        DragFinish((HDROP)wParam);
+
+        HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+        DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+        LPSTR lpszText = new CHAR[dwTextLengt + 1]{};
+        SendMessage(hEdit, WM_GETTEXT, dwTextLengt + 1, (LPARAM)lpszText);
+        if (lpszFileContent && strcmp(lpszFileContent, lpszText) != 0 || lpszFileContent == NULL && lpszText[0]) {
+            switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
+            case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
+            case IDNO: {
+                CHAR szFileName[MAX_PATH] = {};
+                DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
+                HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+                LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+                DWORD dwTextLenght = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+                GlobalFree(lpszFileContent);
+                lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwTextLenght + 1);
+                SendMessage(hEdit, WM_GETTEXT, dwTextLenght + 1, (LPARAM)lpszFileContent);
+                DragFinish((HDROP)wParam);
+            }
+            case IDCANCEL:break;
+            }
+        }
+        else {
+            CHAR szFileName[MAX_PATH] = {};
+            DragQueryFile((HDROP)wParam, 0, szFileName, MAX_PATH);
+            HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+            LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), szFileName);
+            DWORD dwTextLenght = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+            GlobalFree(lpszFileContent);
+            lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwTextLenght + 1);
+            SendMessage(hEdit, WM_GETTEXT, dwTextLenght + 1, (LPARAM)lpszFileContent);
+            DragFinish((HDROP)wParam);
+        }
     }break;
     case WM_COMMAND: {
         switch (LOWORD(wParam))
         {
+        case ID_FILE_NEW: {
+            HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+            DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+            LPSTR lpszText = new CHAR[dwTextLengt + 1]{};
+            SendMessage(hEdit, WM_GETTEXT, dwTextLengt + 1, (LPARAM)lpszText);
+            if (lpszFileContent && strcmp(lpszFileContent, lpszText) != 0 || lpszFileContent == NULL && lpszText[0]) {
+                switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
+                case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
+                case IDNO: {
+                    GlobalFree(lpszFileContent);
+                    lpszFileContent = nullptr;
+                    lpszFileName[0] = 0;
+                    SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"");
+                }
+                case IDCANCEL:break;
+                }
+            }
+            else {
+                GlobalFree(lpszFileContent);
+                lpszFileContent = nullptr;
+                lpszFileName[0] = 0;
+                SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)"");
+                SetFocus(hEdit);
+            }
+        }break;
         case ID_FILE_OPEN: {
             OPENFILENAME ofn;
             ZeroMemory(&ofn, sizeof(ofn));
@@ -128,12 +186,27 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
             ofn.lpstrDefExt = "txt";
 
-            if (GetOpenFileName(&ofn)) LoadTextFileToEdit(GetDlgItem(hwnd, IDC_EDIT), lpszFileName, lpszFileContent);
+            if (GetOpenFileName(&ofn)) {
+                HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
+                LoadTextFileToEdit(hEdit, lpszFileName);
+                DWORD dwTextLenght = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+                GlobalFree(lpszFileContent);
+                lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwTextLenght + 1);
+                SendMessage(hEdit, WM_GETTEXT, dwTextLenght + 1, (LPARAM)lpszFileContent);
+                SetFocus(hEdit);
+            }
 
         }break;
         case ID_FILE_SAVE: {
+            HWND hEdit = GetDlgItem(hwnd, IDC_EDIT);
             if (lpszFileName[0] == 0) SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVEAS, 0);
-            else SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), lpszFileName);
+            else {
+                SaveTextFileFromEdit(hEdit, lpszFileName);
+                DWORD dwTextLenght = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
+                //GlobalFree(lpszFileContent);
+                lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwTextLenght + 1);
+                SendMessage(hEdit, WM_GETTEXT, dwTextLenght + 1, (LPARAM)lpszFileContent);
+            }
         }break;
         case ID_FILE_SAVEAS: {
 
@@ -146,6 +219,7 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             ofn.nMaxFile = MAX_PATH;
             ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
             ofn.lpstrDefExt = "txt";
+
 
             if (GetSaveFileName(&ofn))SaveTextFileFromEdit(GetDlgItem(hwnd, IDC_EDIT), ofn.lpstrFile);
         }break;
@@ -163,11 +237,8 @@ LRESULT CALLBACK WndPRoc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DWORD dwTextLengt = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0);
         LPSTR lpszText = (LPSTR)GlobalAlloc(GPTR, dwTextLengt + 1);
         if (lpszText != NULL) {
-            SendMessage(hEdit, WM_GETTEXT, UINT_MAX, (LPARAM)lpszText);
-            MessageBox(hwnd, strcmp(lpszFileContent, lpszText) == 0 ? "YES" : "NO", "INFO", MB_OK);
-            MessageBox(hwnd, lpszFileContent, "INFO", MB_OK);
-
-            if (strcmp(lpszFileContent, lpszText) != 0) {
+            SendMessage(hEdit, WM_GETTEXT, dwTextLengt + 1, (LPARAM)lpszText);
+            if (lpszFileContent && strcmp(lpszFileContent, lpszText) != 0 || lpszFileContent == NULL && lpszText[0]) {
                 switch (MessageBox(hwnd, "Сохранить изменения?", "Вопрос", MB_YESNOCANCEL | MB_ICONQUESTION)) {
                 case IDYES: SendMessage(hwnd, WM_COMMAND, ID_FILE_SAVE, 0);
                 case IDNO: close = TRUE; break;
@@ -295,19 +366,18 @@ BOOL CALLBACK DlgProcFont(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return FALSE;
 }
 
-BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName, LPSTR lpszFileContent) {
+BOOL LoadTextFileToEdit(HWND hEdit, LPCSTR lpszFileName) {
     BOOL bSuccess = FALSE;
     HANDLE hFile = CreateFile(lpszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
     if (hFile != INVALID_HANDLE_VALUE) {
         DWORD dwFileSize = GetFileSize(hFile, NULL);
         if (dwFileSize != UINT_MAX) {
             LPSTR lpszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
-            //lpszFileContent = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
+
             if (lpszFileText) {
                 DWORD dwRead;
                 if (ReadFile(hFile, lpszFileText, dwFileSize, &dwRead, NULL)) {
                     lpszFileText[dwFileSize] = 0;
-                    strcpy(lpszFileContent, lpszFileText);
 
                     if (SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)lpszFileText)) bSuccess = TRUE;
                 }
